@@ -24,7 +24,7 @@ public class MortgageController {
             model.addAttribute("mortgageRequest", new MortgageRequest());
         }
 
-        return "mortgage";
+        return "index";
     }
 
     @PostMapping
