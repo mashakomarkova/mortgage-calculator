@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mortgage Calculator</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+</head>
+<body class="bg-body-tertiary">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-11">
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4 p-md-5">
+
+                    <div class="mb-4">
+                        <h1 class="h2 mb-1">Mortgage Calculator</h1>
+                        <p class="text-muted mb-0">
+                            Расчет ипотеки с ежемесячной доплатой и сокращением срока
+                        </p>
+                    </div>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger" role="alert"
+                         th:text="${errorMessage}"></div>
+
+                    <form th:action="@{/}" th:object="${mortgageRequest}" method="post">
+
+                        <div class="row g-4">
+                            <!-- Блок ипотеки -->
+                            <div class="col-12 col-lg-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h2 class="h5 mb-1">Параметры ипотеки</h2>
+                                        <p class="text-muted small mb-3">
+                                            Данные по квартире, кредиту и досрочным платежам
+                                        </p>
+
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label for="propertyPrice" class="form-label">
+                                                    Полная стоимость квартиры
+                                                </label>
+                                                <input id="propertyPrice"
+                                                       type="number"
+                                                       step="0.01"
+                                                       class="form-control"
+                                                       th:field="*{propertyPrice}">
+                                                <div class="text-danger small mt-1"
+                                                     th:if="${#fields.hasErrors('propertyPrice')}"
+                                                     th:errors="*{propertyPrice}"></div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for="downPayment" class="form-label">
+                                                    Первоначальный взнос
+                                                </label>
+                                                <input id="downPayment"
+                                                       type="number"
+                                                       step="0.01"
+                                                       class="form-control"
+                                                       th:field="*{downPayment}">
+                                                <div class="text-danger small mt-1"
+                                                     th:if="${#fields.hasErrors('downPayment')}"
+                                                     th:errors="*{downPayment}"></div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for="loanTermYears" class="form-label">
+                                                    Срок кредита (лет)
+                                                </label>
+                                                <input id="loanTermYears"
+                                                       type="number"
+                                                       class="form-control"
+                                                       th:field="*{loanTermYears}">
+                                                <div class="text-danger small mt-1"
+                                                     th:if="${#fields.hasErrors('loanTermYears')}"
+                                                     th:errors="*{loanTermYears}"></div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for="annualInterestRate" class="form-label">
+                                                    Годовой процент банка (%)
+                                                </label>
+                                                <input id="annualInterestRate"
+                                                       type="number"
+                                                       step="0.01"
+                                                       class="form-control"
+                                                       th:field="*{annualInterestRate}">
+                                                <div class="text-danger small mt-1"
+                                                     th:if="${#fields.hasErrors('annualInterestRate')}"
+                                                     th:errors="*{annualInterestRate}"></div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="form-check mt-4">
+                                                    <input id="includeExtraMonthlyPayment"
+                                                           class="form-check-input"
+                                                           type="checkbox"
+                                                           th:field="*{includeExtraMonthlyPayment}">
+                                                    <label for="includeExtraMonthlyPayment" class="form-check-label">
+                                                        Учитывать ежемесячную доплату сверх платежа
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12"
+                                                 id="extraMonthlyPaymentBlock"
+                                                 th:classappend="${mortgageRequest.includeExtraMonthlyPayment} ? '' : ' d-none'">
+                                                <label for="extraMonthlyPayment" class="form-label">
+                                                    Ежемесячная доплата сверх платежа
+                                                </label>
+                                                <input id="extraMonthlyPayment"
+                                                       type="number"
+                                                       step="0.01"
+                                                       min="0"
+                                                       class="form-control"
+                                                       th:field="*{extraMonthlyPayment}">
+                                                <div class="text-danger small mt-1"
+                                                     th:if="${#fields.hasErrors('extraMonthlyPayment')}"
+                                                     th:errors="*{extraMonthlyPayment}"></div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <div class="form-check">
+                                                    <input id="includeAnnualPropertyGrowthRate"
+                                                           class="form-check-input"
+                                                           type="checkbox"
+                                                           th:field="*{includeAnnualPropertyGrowthRate}">
+                                                    <label for="includeAnnualPropertyGrowthRate" class="form-check-label">
+                                                        Учитывать рост стоимости квартиры
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12"
+                                                 id="annualPropertyGrowthRateBlock"
+                                                 th:classappend="${mortgageRequest.includeAnnualPropertyGrowthRate} ? '' : ' d-none'">
+                                                <label for="annualPropertyGrowthRate" class="form-label">
+                                                    Рост стоимости квартиры в год (%)
+                                                </label>
+                                                <input id="annualPropertyGrowthRate"
+                                                       type="number"
+                                                       step="0.01"
+                                                       min="0"
+                                                       class="form-control"
+                                                       th:field="*{annualPropertyGrowthRate}">
+                                                <div class="text-danger small mt-1"
+                                                     th:if="${#fields.hasErrors('annualPropertyGrowthRate')}"
+                                                     th:errors="*{annualPropertyGrowthRate}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Блок капитала без ипотеки -->
+                            <div class="col-12 col-lg-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h2 class="h5 mb-1">Капитал без ипотеки</h2>
+                                        <p class="text-muted small mb-3">
+                                            Опциональный сценарий для сравнения с накоплением без покупки квартиры
+                                        </p>
+
+                                        <div class="form-check mb-3">
+                                            <input id="calculateCapitalWithoutMortgage"
+                                                   class="form-check-input"
+                                                   type="checkbox"
+                                                   th:field="*{calculateCapitalWithoutMortgage}">
+                                            <label for="calculateCapitalWithoutMortgage" class="form-check-label">
+                                                Посчитать личный капитал без ипотеки
+                                            </label>
+                                        </div>
+
+                                        <div id="capitalWithoutMortgageFields"
+                                             th:classappend="${mortgageRequest.calculateCapitalWithoutMortgage} ? '' : ' d-none'">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label for="monthlySavingsWithoutMortgage" class="form-label">
+                                                        Сколько откладывать в месяц
+                                                    </label>
+                                                    <input id="monthlySavingsWithoutMortgage"
+                                                           type="number"
+                                                           step="0.01"
+                                                           class="form-control"
+                                                           th:field="*{monthlySavingsWithoutMortgage}">
+                                                    <div class="text-danger small mt-1"
+                                                         th:if="${#fields.hasErrors('monthlySavingsWithoutMortgage')}"
+                                                         th:errors="*{monthlySavingsWithoutMortgage}"></div>
+                                                </div>
+
+                                                <div class="col-12">
+                                                    <label for="annualInvestmentReturnRate" class="form-label">
+                                                        Годовая доходность инвестиций (%)
+                                                    </label>
+                                                    <input id="annualInvestmentReturnRate"
+                                                           type="number"
+                                                           step="0.01"
+                                                           class="form-control"
+                                                           th:field="*{annualInvestmentReturnRate}">
+                                                    <div class="text-danger small mt-1"
+                                                         th:if="${#fields.hasErrors('annualInvestmentReturnRate')}"
+                                                         th:errors="*{annualInvestmentReturnRate}"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Кнопка -->
+                            <div class="col-12">
+                                <div class="d-flex justify-content-start">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        Рассчитать
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div th:if="${result != null}" class="card shadow-sm border-0 mt-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+                        <div>
+                            <h2 class="h4 mb-1">Результат расчета</h2>
+                            <p class="text-muted mb-0">Сравнение сценариев: ипотека vs накопление без ипотеки</p>
+                        </div>
+                        <span class="badge text-bg-success">Расчет выполнен</span>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 col-xl-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Сумма займа</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.loanAmount, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Основной ежемесячный платеж</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.monthlyPayment, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4"
+                             th:if="${mortgageRequest.includeExtraMonthlyPayment}">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Ежемесячная доплата</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.extraMonthlyPayment, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Первоначальный срок кредита</div>
+                                <div class="fs-5 fw-semibold">
+                                    <span th:text="${result.originalLoanTermMonths}"></span> месяцев
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4" th:if="${mortgageRequest.includeExtraMonthlyPayment}">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Фактический срок с доплатой</div>
+                                <div class="fs-5 fw-semibold">
+                                    <span th:text="${result.actualLoanTermMonths}"></span> месяцев
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4" th:if="${mortgageRequest.includeExtraMonthlyPayment}">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">С доплатой погашение быстрее на</div>
+                                <div class="fs-5 fw-semibold">
+                                    <span th:text="${result.savedYearsPart}"></span> лет
+                                    <span th:text="${result.savedRemainingMonthsPart}"></span> месяцев
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Всего выплачено банку с процентами</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.totalPaidIncludingBankFee, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Переплата по процентам</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.totalInterestPaid, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6"
+                             th:if="${result.calculateCapitalWithoutMortgage}">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Итоговый капитал без ипотеки</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.finalNetWorthWithoutMortgage, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small">Итоговый капитал с ипотекой</div>
+                                <div class="fs-5 fw-semibold"
+                                     th:text="${#numbers.formatDecimal(result.finalNetWorthWithMortgage, 1, 'COMMA', 2, 'POINT')}"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Таблица ипотеки -->
+                        <div th:class="${result.calculateCapitalWithoutMortgage} ? 'col-12 col-lg-6' : 'col-12'">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h3 class="h5 mb-1">Ипотека</h3>
+                                    <p class="text-muted small mb-3">
+                                        Платежи, остаток долга, стоимость квартиры и чистый капитал с ипотекой
+                                    </p>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover align-middle table-sm">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th class="text-center">Месяц</th>
+                                                <th>Осн. платеж</th>
+                                                <th th:if="${mortgageRequest.includeExtraMonthlyPayment}">Доплата</th>
+                                                <th>Общий платеж</th>
+                                                <th>Проценты</th>
+                                                <th>Тело кредита</th>
+                                                <th>Остаток долга</th>
+                                                <th th:if="${mortgageRequest.includeExtraMonthlyPayment}">Стоимость квартиры</th>
+                                                <th>Чистый капитал с ипотекой</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="row : ${result.paymentSchedule}">
+                                                <td class="text-center" th:text="${row.monthNumber}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.baseMonthlyPayment, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:if="${mortgageRequest.includeExtraMonthlyPayment}"
+                                                    th:text="${#numbers.formatDecimal(row.extraPayment, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.totalPayment, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.interestAmount, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.principalAmount, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.remainingBalance, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:if="${mortgageRequest.includeExtraMonthlyPayment}"
+                                                    th:text="${#numbers.formatDecimal(row.propertyCurrentValue, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.netWorthWithMortgage, 1, 'COMMA', 2, 'POINT')}"></td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Таблица капитала без ипотеки -->
+                        <div class="col-12 col-lg-6" th:if="${result.calculateCapitalWithoutMortgage}">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <h3 class="h5 mb-1">Капитал без ипотеки</h3>
+                                    <p class="text-muted small mb-3">
+                                        Рост личных накоплений и чистый капитал при сценарии без покупки квартиры
+                                    </p>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover align-middle table-sm">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th class="text-center">Месяц</th>
+                                                <th>Ежемесячные накопления</th>
+                                                <th>Стоимость сбережений</th>
+                                                <th>Чистый капитал без ипотеки</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="row : ${result.paymentSchedule}">
+                                                <td class="text-center" th:text="${row.monthNumber}"></td>
+                                                <td th:text="${#numbers.formatDecimal(mortgageRequest.monthlySavingsWithoutMortgage, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.savingsCurrentValue, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(row.netWorthWithoutMortgage, 1, 'COMMA', 2, 'POINT')}"></td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const capitalCheckbox = document.getElementById('calculateCapitalWithoutMortgage');
+        const capitalFieldsBlock = document.getElementById('capitalWithoutMortgageFields');
+
+        const extraPaymentCheckbox = document.getElementById('includeExtraMonthlyPayment');
+        const extraPaymentBlock = document.getElementById('extraMonthlyPaymentBlock');
+        const extraPaymentInput = document.getElementById('extraMonthlyPayment');
+
+        const propertyGrowthCheckbox = document.getElementById('includeAnnualPropertyGrowthRate');
+        const propertyGrowthBlock = document.getElementById('annualPropertyGrowthRateBlock');
+        const propertyGrowthInput = document.getElementById('annualPropertyGrowthRate');
+
+        function toggleBlock(checkbox, block, input) {
+            if (!checkbox || !block) {
+                return;
+            }
+
+            const shouldShow = checkbox.checked;
+            block.classList.toggle('d-none', !shouldShow);
+
+            if (!shouldShow && input) {
+                input.value = '';
+            }
+        }
+
+        if (capitalCheckbox && capitalFieldsBlock) {
+            toggleBlock(capitalCheckbox, capitalFieldsBlock);
+            capitalCheckbox.addEventListener('change', function () {
+                toggleBlock(capitalCheckbox, capitalFieldsBlock);
+            });
+        }
+
+        if (extraPaymentCheckbox && extraPaymentBlock) {
+            toggleBlock(extraPaymentCheckbox, extraPaymentBlock, extraPaymentInput);
+            extraPaymentCheckbox.addEventListener('change', function () {
+                toggleBlock(extraPaymentCheckbox, extraPaymentBlock, extraPaymentInput);
+            });
+        }
+
+        if (propertyGrowthCheckbox && propertyGrowthBlock) {
+            toggleBlock(propertyGrowthCheckbox, propertyGrowthBlock, propertyGrowthInput);
+            propertyGrowthCheckbox.addEventListener('change', function () {
+                toggleBlock(propertyGrowthCheckbox, propertyGrowthBlock, propertyGrowthInput);
+            });
+        }
+    });
+</script>
+</body>
+</html>
